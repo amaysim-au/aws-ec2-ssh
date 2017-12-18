@@ -29,8 +29,8 @@ EOF
 }
 
 SSHD_CONFIG_FILE="/etc/ssh/sshd_config"
-AUTHORIZED_KEYS_COMMAND_FILE="/opt/authorized_keys_command.sh"
-IMPORT_USERS_SCRIPT_FILE="/opt/import_users.sh"
+AUTHORIZED_KEYS_COMMAND_FILE="/usr/local/bin/authorized_keys_command.sh"
+IMPORT_USERS_SCRIPT_FILE="/usr/local/bin/import_users.sh"
 MAIN_CONFIG_FILE="/etc/aws-ec2-ssh.conf"
 
 IAM_GROUPS=""
@@ -80,45 +80,16 @@ do
     esac
 done
 
-tmpdir=$(mktemp -d)
+wget "https://raw.githubusercontent.com/amaysim-au/aws-ec2-ssh/master/authorized_keys_command.sh" -O $AUTHORIZED_KEYS_COMMAND_FILE
+chmod +x $AUTHORIZED_KEYS_COMMAND_FILE
 
-cd "$tmpdir"
+wget "https://raw.githubusercontent.com/amaysim-au/aws-ec2-ssh/master/import_users.sh" -O $IMPORT_USERS_SCRIPT_FILE
+chmod +x $IMPORT_USERS_SCRIPT_FILE
 
-git clone -b master https://github.com/widdix/aws-ec2-ssh.git
-
-cd "$tmpdir/aws-ec2-ssh"
-
-cp authorized_keys_command.sh $AUTHORIZED_KEYS_COMMAND_FILE
-cp import_users.sh $IMPORT_USERS_SCRIPT_FILE
-
-if [ "${IAM_GROUPS}" != "" ]
-then
-    echo "IAM_AUTHORIZED_GROUPS=\"${IAM_GROUPS}\"" >> $MAIN_CONFIG_FILE
-fi
-
-if [ "${SUDO_GROUPS}" != "" ]
-then
-    echo "SUDOERS_GROUPS=\"${SUDO_GROUPS}\"" >> $MAIN_CONFIG_FILE
-fi
-
-if [ "${LOCAL_GROUPS}" != "" ]
-then
-    echo "LOCAL_GROUPS=\"${LOCAL_GROUPS}\"" >> $MAIN_CONFIG_FILE
-fi
-
-if [ "${ASSUME_ROLE}" != "" ]
-then
-    echo "ASSUMEROLE=\"${ASSUME_ROLE}\"" >> $MAIN_CONFIG_FILE
-fi
-
-if [ "${USERADD_PROGRAM}" != "" ]
-then
-    echo "USERADD_PROGRAM=\"${USERADD_PROGRAM}\"" >> $MAIN_CONFIG_FILE
-fi
-
-if [ "${USERADD_ARGS}" != "" ]
-then
-    echo "USERADD_ARGS=\"${USERADD_ARGS}\"" >> $MAIN_CONFIG_FILE
+if [ "${ASSUME_ROLE}" != "" ]; then
+    echo "ASSUMEROLE=\"${ASSUME_ROLE}\"" > $MAIN_CONFIG_FILE
+else
+    echo "ASSUMEROLE=\"\"" > $MAIN_CONFIG_FILE
 fi
 
 if grep -q '#AuthorizedKeysCommand none' $SSHD_CONFIG_FILE; then
@@ -137,15 +108,23 @@ else
     fi
 fi
 
-cat > /etc/cron.d/import_users << EOF
+cat > /etc/cron.d/import_users_${IAM_GROUPS} << EOF
+IAM_AUTHORIZED_GROUPS="${IAM_GROUPS}"
+SUDOERS_GROUPS="${SUDO_GROUPS}"
+LOCAL_GROUPS="${LOCAL_GROUPS}"
+LOCAL_MARKER_GROUP="iam-synced-users"
+ASSUMEROLE="${ASSUME_ROLE}"
+USERADD_PROGRAM="${USERADD_PROGRAM}"
+USERADD_ARGS="${USERADD_ARGS}"
 SHELL=/bin/bash
 PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin
 MAILTO=root
 HOME=/
 */10 * * * * root $IMPORT_USERS_SCRIPT_FILE
 EOF
-chmod 0644 /etc/cron.d/import_users
+chmod 0644 /etc/cron.d/import_users_${IAM_GROUPS}
 
+export IAM_AUTHORIZED_GROUPS SUDOERS_GROUPS LOCAL_GROUPS LOCAL_MARKER_GROUP ASSUMEROLE USERADD_PROGRAM USERADD_ARGS
 $IMPORT_USERS_SCRIPT_FILE
 
 # In order to support SELinux in Enforcing mode, we need to tell SELinux that it
