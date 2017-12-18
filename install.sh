@@ -80,10 +80,10 @@ do
     esac
 done
 
-wget "https://raw.githubusercontent.com/amaysim-au/aws-ec2-ssh/master/authorized_keys_command.sh" -O $AUTHORIZED_KEYS_COMMAND_FILE
+wget -q "https://raw.githubusercontent.com/amaysim-au/aws-ec2-ssh/master/authorized_keys_command.sh" -O $AUTHORIZED_KEYS_COMMAND_FILE
 chmod +x $AUTHORIZED_KEYS_COMMAND_FILE
 
-wget "https://raw.githubusercontent.com/amaysim-au/aws-ec2-ssh/master/import_users.sh" -O $IMPORT_USERS_SCRIPT_FILE
+wget -q "https://raw.githubusercontent.com/amaysim-au/aws-ec2-ssh/master/import_users.sh" -O $IMPORT_USERS_SCRIPT_FILE
 chmod +x $IMPORT_USERS_SCRIPT_FILE
 
 if [ "${ASSUME_ROLE}" != "" ]; then
