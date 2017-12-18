@@ -1,14 +1,11 @@
 #!/bin/bash -e
 
-# source configuration if it exists
-[ -f /etc/aws-ec2-ssh.conf ] && . /etc/aws-ec2-ssh.conf
-
 # Should we actually do something?
 : ${DONOTSYNC:=0}
 
 if [ ${DONOTSYNC} -eq 1 ]
 then
-    echo "Please configure aws-ec2-ssh by editing /etc/aws-ec2-ssh.conf"
+    echo "Please unset DONOTSYNC to enable"
     exit 1
 fi
 

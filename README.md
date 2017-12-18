@@ -24,7 +24,7 @@ A picture is worth a thousand words:
 
 ### Demo with CloudFormation
 
-1. Upload your public SSH key to IAM: 
+1. Upload your public SSH key to IAM:
    1. Open the Users section in the [IAM Management Console](https://console.aws.amazon.com/iam/home#users)
    2. Click the row with your user
    3. Select the **Security Credentials** tab
@@ -37,24 +37,9 @@ A picture is worth a thousand words:
 
 ## How to integrate this system into your environment
 
-### Install via RPM
-
-> Check the [releases](https://github.com/widdix/aws-ec2-ssh/releases) and replace `1.1.0` with the latest released version.
-
-1. Upload your public SSH key to IAM: 
-   1. Open the Users section in the [IAM Management Console](https://console.aws.amazon.com/iam/home#users)
-   2. Click the row with your user
-   3. Select the **Security Credentials** tab
-   4. Click the **Upload SSH public key** button at the bottom of the page
-   5. Paste your public SSH key into the text-area and click the **Upload SSH public key** button to save
-2. Attach the IAM permissions defined in [`iam_ssh_policy.json`](./iam_ssh_policy.json) to the EC2 instances (by creating an IAM role and an Instance Profile)
-3. Install the RPM: `rpm -i https://s3-eu-west-1.amazonaws.com/widdix-aws-ec2-ssh-releases-eu-west-1/aws-ec2-ssh-1.4.0-1.el7.centos.noarch.rpm`
-4. The configuration file is placed into `/etc/aws-ec2-ssh.conf`
-5. The RPM creates a crontab file to run import_users.sh every 10 minutes. This file is placed in `/etc/cron.d/import_users`
-
 ### Install via install.sh script
 
-1. Upload your public SSH key to IAM: 
+1. Upload your public SSH key to IAM:
    1. Open the Users section in the [IAM Management Console](https://console.aws.amazon.com/iam/home#users)
    2. Click the row with your user
    3. Select the **Security Credentials** tab
@@ -88,14 +73,19 @@ Linux user names may only be up to 32 characters long.
 
 ## Configuration
 
-There are a couple of things you can configure by editing/creating the file `/etc/aws-ec2-ssh.conf` and adding
-one or more of the following lines:
+The multi AWS Account Role can configure by editing/creating the file `/etc/aws-ec2-ssh.conf` and adding
+the following line:
 
 ```
 ASSUMEROLE="IAM-role-arn"                      # IAM Role ARN for multi account. See below for more info
+```
+
+There are a couple of things you can configure by creating ENVIRONMENT variables:
+
+```
 IAM_AUTHORIZED_GROUPS="GROUPNAMES"             # Comma separated list of IAM groups to import
 SUDOERS_GROUPS="GROUPNAMES"                    # Comma seperated list of IAM groups that should have sudo access
-IAM_AUTHORIZED_GROUPS_TAG="KeyTag"             # Key Tag of EC2 that contains a Comma separated list of IAM groups to import - IAM_AUTHORIZED_GROUPS_TAG will override IAM_AUTHORIZED_GROUPS, you can use only one of them 
+IAM_AUTHORIZED_GROUPS_TAG="KeyTag"             # Key Tag of EC2 that contains a Comma separated list of IAM groups to import - IAM_AUTHORIZED_GROUPS_TAG will override IAM_AUTHORIZED_GROUPS, you can use only one of them
 SUDOERS_GROUPS_TAG="KeyTag"                    # Key Tag of EC2 that contains a Comma separated list of IAM groups that should have sudo access - SUDOERS_GROUPS_TAG will override SUDOERS_GROUPS, you can use only one of them
 SUDOERSGROUP="GROUPNAME"                       # Deprecated! IAM group that should have sudo access. Please use SUDOERS_GROUPS as this variable will be removed in future release.
 LOCAL_MARKER_GROUP="iam-synced-users"          # Dedicated UNIX group to mark imported users. Used for deleting removed IAM users
@@ -146,5 +136,4 @@ For your EC2 instances, you need a IAM role that allows the `sts:AssumeRole` act
 * uid's and gid's across multiple servers might not line up correctly (due to when a server was booted, and what users existed at that time). Could affect NFS mounts or Amazon EFS.
 * this solution will work for ~100 IAM users and ~100 EC2 instances. If your setup is much larger (e.g. 10 times more users or 10 times more EC2 instances) you may run into two issues:
   * IAM API limitations
-  * Disk space issues
 * **not all IAM user names are allowed in Linux user names** (e.g. if you use email addresses as IAM user names). See section [IAM user names and Linux user names](#iam-user-names-and-linux-user-names) for further details.
