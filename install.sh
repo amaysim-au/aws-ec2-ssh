@@ -23,6 +23,8 @@ Install import_users.sh and authorized_key_commands.
                        Defaults to '/usr/sbin/useradd'
     -u "useradd args"  Specify arguments to use with useradd.
                        Defaults to '--create-home --shell /bin/bash'
+    -d user            Which user the SSHD should run the authorized_keys_command as.
+                       Default 'nobody'
 
 
 EOF
@@ -39,8 +41,9 @@ LOCAL_GROUPS=""
 ASSUME_ROLE=""
 USERADD_PROGRAM=""
 USERADD_ARGS=""
+RUNAS_USER="nobody"
 
-while getopts :hva:i:l:s: opt
+while getopts :hva:i:l:s:d: opt
 do
     case $opt in
         h)
@@ -67,6 +70,9 @@ do
             ;;
         u)
             USERADD_ARGS="$OPTARG"
+            ;;
+        d)
+            RUNAS_USER="$OPTARG"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -100,11 +106,11 @@ else
     fi
 fi
 
-if grep -q '#AuthorizedKeysCommandUser nobody' $SSHD_CONFIG_FILE; then
-    sed -i "s:#AuthorizedKeysCommandUser nobody:AuthorizedKeysCommandUser nobody:g" $SSHD_CONFIG_FILE
+if grep -q '#AuthorizedKeysCommandUser' $SSHD_CONFIG_FILE; then
+    sed -i "s:#AuthorizedKeysCommandUser .*$:AuthorizedKeysCommandUser $RUNAS_USER:g" $SSHD_CONFIG_FILE
 else
-    if ! grep -q 'AuthorizedKeysCommandUser nobody' $SSHD_CONFIG_FILE; then
-        echo "AuthorizedKeysCommandUser nobody" >> $SSHD_CONFIG_FILE
+    if ! grep -q "AuthorizedKeysCommandUser $RUNAS_USER" $SSHD_CONFIG_FILE; then
+        echo "AuthorizedKeysCommandUser $RUNAS_USER" >> $SSHD_CONFIG_FILE
     fi
 fi
 
