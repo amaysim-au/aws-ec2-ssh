@@ -41,10 +41,6 @@ fi
 # Possibility to provide custom useradd arguments
 : ${USERADD_ARGS:="--user-group --create-home --shell /bin/bash"}
 
-# Initizalize INSTANCE variable
-INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | awk -F\" '{print $4}')
-
 function log() {
     /usr/bin/logger -i -p auth.info -t aws-ec2-ssh "$@"
 }
@@ -71,6 +67,8 @@ function setup_aws_credentials() {
 function get_iam_groups_from_tag() {
     if [ "${IAM_AUTHORIZED_GROUPS_TAG}" ]
     then
+        INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+        REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | awk -F\" '{print $4}')
         IAM_AUTHORIZED_GROUPS=$(\
             aws --region $REGION ec2 describe-tags \
             --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=$IAM_AUTHORIZED_GROUPS_TAG" \
@@ -119,6 +117,8 @@ function get_local_users() {
 function get_sudoers_groups_from_tag() {
     if [ "${SUDOERS_GROUPS_TAG}" ]
     then
+        INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+        REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | awk -F\" '{print $4}')
         SUDOERS_GROUPS=$(\
             aws --region $REGION ec2 describe-tags \
             --filters "Name=resource-id,Values=$INSTANCE_ID" "Name=key,Values=$SUDOERS_GROUPS_TAG" \
